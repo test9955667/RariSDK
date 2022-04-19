@@ -4,7 +4,9 @@ const lensAbi = require('../Fuse/contracts/abi/FusePoolLens.json');
 const dirAbi  = require('../Fuse/contracts/abi/FusePoolDirectory.json');
 
 const dirAddr = "0x835482FE0532f169024d5E9410199369aAD5C77E";
-const url = "";
+
+// todo: remove from prod
+const url = "https://eth-mainnet.alchemyapi.io/v2/LJVLCa0Ry_071ika2ECrnuP2Idk1Z7kS";
 const provider = new ethers.providers.JsonRpcProvider(url);
 
 const dir = new ethers.Contract(dirAddr, dirAbi, provider);
@@ -54,12 +56,20 @@ async function getPoolsSafe() {
     
 
 }
-getPoolsSafe();
 
-const getPools = async() => {
-    try{ return await getPoolsUnsafe();
-    } catch (e) { return await getPoolsSafe(); }
+
+export class LensV1 {
+    public allPools: any[] = [];
+
+    getPools = async() => {
+        if(this.allPools.length != 0) return this.allPools;
+        try{ return await getPoolsUnsafe();
+        } catch (e) { return await getPoolsSafe(); }
+    }
 }
+
+
+
 
 /*/////////   OG LENS export async functionS     //////*/
 

@@ -1,39 +1,188 @@
-import ethers from "ethers";
+import * as ethers from "ethers";
 
-const lensAbi = require('../Fuse/contracts/abi/FusePoolLens.json');
-const dirAbi  = require('../Fuse/contracts/abi/FusePoolDirectory.json');
+import lensAbi from '../Fuse/contracts/abi/FusePoolLens.json';
+import dirAbi from '../Fuse/contracts/abi/FusepoolDirectory.json';
+
+import { rpcUrl } from "../../ecosystem.config";
 
 const dirAddr = "0x835482FE0532f169024d5E9410199369aAD5C77E";
 
 // todo: remove from prod
-const url = "https://eth-mainnet.alchemyapi.io/v2/LJVLCa0Ry_071ika2ECrnuP2Idk1Z7kS";
+const url = rpcUrl;
+
 const provider = new ethers.providers.JsonRpcProvider(url);
 
 const dir = new ethers.Contract(dirAddr, dirAbi, provider);
 
 const dirBlockEth = 12060007;
 
-///////// TODO: /////////
+///////// TYPES /////////
 
-// 1) finish skeleton 
+export type PoolSummary = {
+    address: String;
+    totalSupply: ethers.BigNumber;
+    totalBorrow: ethers.BigNumber;
+    underlyingTokens:  String[];
+    underlyingSymbols: String[];
+} 
 
-// 2) finish logic
-
-// 3) make types/typefile for params and objects
-    // 3a) can the comptroller type just be its address instead?
-
-// @dev this file is modified from storms python impl of the lens to fit the ts sdk
-// safe pool fetching has been implemented 
-
-/////// ON-CHAIN DATA /////////
-
-// Gets pools from contract storage, may break evm in future, fast and tried first
-async function getPoolsUnsafe() {
+export type cToken = {
+    address: String;
+    supplyBal: ethers.BigNumber;
+    borrowBal: ethers.BigNumber;
+    supplyRate: ethers.BigNumber;
+    borrowRate: ethers.BigNumber;
+    borrowEnabled?: boolean;
 
 }
 
-// Gets pools from contract events, safe for long term calling, used as fallback
-async function getPoolsSafe() {
+
+
+//// ISOLATED FUNCTIONS ////
+
+// Functions from lens can be called raw here, or from a LensV1 object which can be significantly more efficient for multuple calls
+// because it caches data from on chain
+
+async function getPublicPoolsWithData() {
+
+}
+
+async function getPoolsByAccount() {
+
+}
+
+async function getPoolsWithData(indexes: number[], pools: any[]) {
+
+}
+
+
+export class LensV1 {
+    // fields
+    public allPools: String[] = [];
+    protected url: string;
+    protected provider: any;
+    public dir: ethers.Contract;
+
+    // todo: use map (iterable) instead?
+    public poolData: PoolSummary[] = [];
+
+    // todo: move to chain file so the chain V1 is on can be specified
+    readonly dirBlockEth = 12060007;
+
+    
+
+    constructor(rpcUrl: string) {
+        this.url = rpcUrl;
+        this.provider = new ethers.providers.JsonRpcProvider(rpcUrl);
+        this.dir = new ethers.Contract(dirAddr, dirAbi, provider);
+    }
+
+    // Gets pools from contract storage, may break evm in future, fast and tried first
+    async getPoolsUnsafe() {
+        return await dir.methods.getAllPools().call("");
+    }
+
+
+
+    getPools = async() => {
+        let allPools: String[] = [];
+        if(this.allPools.length !== 0) return this.allPools;
+        try { 
+            allPools = await this.getPoolsUnsafe();
+            this.allPools = allPools;
+            return allPools;
+        } catch (e) { 
+            allPools = await getPoolsSafe(this.dir, this.provider); 
+            this.allPools = allPools;
+            return allPools;
+        }
+    }
+
+
+    async getPublicPoolsWithData() {   
+
+    }
+
+    async getPoolsByAccountWithData(account: string) {
+
+    }   
+
+
+    async getPoolSummary(comptroller: any) { 
+
+    }   
+
+    async getPoolAssetsWithData(
+    comptroller: any, 
+    cTokens: any[] | undefined, 
+    user: string | undefined) 
+    {
+
+    }
+
+    // use db fallback on chain 
+    async getTokenNameAndSymbol(token: string) {
+
+    }
+
+    async getPoolUsersWithData(
+        comptroller: any[] | any, 
+        maxHealth: bigint | undefined) 
+        { 
+        let health = maxHealth === undefined ? 0 : maxHealth;
+
+    }
+
+
+    async getPublicPoolUsersWithData(maxHealth: bigint | undefined) {
+        let health = maxHealth === undefined ? 0 : maxHealth;
+    }
+
+
+    async getPoolsBysupplier(account: string) {
+
+    }
+
+
+    async getPoolsBySupplierWithData(account: string) {
+
+    }
+
+
+    async getUserSummary(account: string) {
+
+    }
+
+    async getPoolUserSummary(comptroller: any, account: string) {
+
+    }
+
+    async getWhitelistedPoolsByAccount(account: string) {
+
+    }
+
+    async getWhitelistedPoolsByAccountWithData(account: string) {
+
+    }  
+
+
+    async getPoolsWithData(indexes?: number[], pools?: any[]) {
+        if(this.allPools.length === 0) {
+            this.allPools = await dir.getAllPools().call();
+        }
+        
+        let toGet = pools === undefined ? this.allPools : pools;
+        
+    }
+    
+}
+
+
+// Uses safe evnt log filter query to get all pools
+async function getPoolsSafe(
+    dir: ethers.Contract, 
+    provider: ethers.providers.JsonRpcProvider
+    ) {
     // get pool cretion events from directory
     const filter = dir.filters.PoolRegistered();
     const curr   = await provider.getBlockNumber();
@@ -54,90 +203,8 @@ async function getPoolsSafe() {
 
     console.log(events);
     
-
-}
-
-
-export class LensV1 {
-    public allPools: any[] = [];
-
-    getPools = async() => {
-        if(this.allPools.length != 0) return this.allPools;
-        try{ return await getPoolsUnsafe();
-        } catch (e) { return await getPoolsSafe(); }
-    }
+    return [];
 }
 
 
 
-
-/*/////////   OG LENS export async functionS     //////*/
-
-export async function getPublicPoolsWithData() {
-
-}
-
-export async function getPoolsByAccountWithData(account: string) {
-
-}
-
-export async function getPoolsWithData(indexes: bigint[], pools: any[]) { 
-
-}
-
-export async function getPoolSummary(comptroller: any) { 
-
-}
-
-export async function getPoolAssetsWithData(
-    comptroller: any, 
-    cTokens: any[] | undefined, 
-    user: string | undefined) 
-    {
-
-}
-
-// use db fallback on chain 
-export async function getTokenNameAndSymbol(token: string) {
-
-}
-
-export async function getPoolUsersWithData(
-    comptroller: any[] | any, 
-    maxHealth: bigint | undefined) 
-    { 
-    let health = maxHealth == undefined ? 0 : maxHealth;
-
-}
-
-
-export async function getPublicPoolUsersWithData(maxHealth: bigint | undefined) {
-    let health = maxHealth == undefined ? 0 : maxHealth;
-}
-
-
-export async function getPoolsBysupplier(account: string) {
-
-}
-
-
-export async function getPoolsBySupplierWithData(account: string) {
-
-}
-
-
-export async function getUserSummary(account: string) {
-
-}
-
-export async function getPoolUserSummary(comptroller: any, account: string) {
-
-}
-
-export async function getWhitelistedPoolsByAccount(account: string) {
-
-}
-
-export async function getWhitelistedPoolsByAccountWithData(account: string) {
-
-}

@@ -89,6 +89,16 @@ async function getPositionStatus(position: Event, wallet: Contract) {
 }
 
 
+/**
+ * Gets the proper order of asset 0 and asset 1 in univ3 pool
+ */
+async function getZeroForOne() {
 
+}
+
+
+const MaxLeverage = () => {
+    
+}
 
 
